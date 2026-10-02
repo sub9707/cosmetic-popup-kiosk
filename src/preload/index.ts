@@ -2,7 +2,6 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { KioskAPI, ParticipantInput } from "@shared/types";
 
 const kioskAPI: KioskAPI = {
-  getQuestions: () => ipcRenderer.invoke("kiosk:getQuestions"),
   saveParticipant: (input: ParticipantInput) => ipcRenderer.invoke("kiosk:saveParticipant", input),
   getStatistics: () => ipcRenderer.invoke("kiosk:getStatistics"),
   exportExcel: () => ipcRenderer.invoke("kiosk:exportExcel"),

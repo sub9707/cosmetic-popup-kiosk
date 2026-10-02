@@ -1,5 +1,6 @@
 import { Delete } from "lucide-react";
 import { useState } from "react";
+import { useUiText } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const PIN_CODE = "202609";
@@ -12,6 +13,7 @@ interface PinLockModalProps {
 
 /** 설정 모달을 열기 전 매번 요구하는 숫자 비밀번호 게이트. 실제 보안 목적이 아니라 단순 접근 확인용. */
 export function PinLockModal({ onSuccess, onCancel }: PinLockModalProps) {
+  const text = useUiText();
   const [entered, setEntered] = useState("");
   const [shake, setShake] = useState(false);
 
@@ -44,7 +46,7 @@ export function PinLockModal({ onSuccess, onCancel }: PinLockModalProps) {
         className="flex w-full max-w-xs flex-col items-center gap-7 rounded-2xl border-2 border-event-primary bg-background p-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-lg font-medium text-event-primary">비밀번호 입력</p>
+        <p className="text-lg font-medium text-event-primary">{text.enterPin}</p>
 
         <div className={cn("flex gap-3", shake && "pin-shake")}>
           {Array.from({ length: PIN_CODE.length }, (_, i) => (
@@ -80,7 +82,7 @@ export function PinLockModal({ onSuccess, onCancel }: PinLockModalProps) {
           <button
             type="button"
             onClick={() => setEntered((prev) => prev.slice(0, -1))}
-            aria-label="지우기"
+            aria-label={text.deleteDigit}
             className="flex size-16 items-center justify-center rounded-full text-event-primary transition-colors active:scale-95 active:bg-event-primary-soft"
           >
             <Delete className="size-6" />
@@ -92,7 +94,7 @@ export function PinLockModal({ onSuccess, onCancel }: PinLockModalProps) {
           onClick={onCancel}
           className="text-sm font-medium text-muted-foreground active:text-foreground"
         >
-          취소
+          {text.cancel}
         </button>
       </div>
     </div>

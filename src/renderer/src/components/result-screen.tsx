@@ -9,17 +9,14 @@ import {
   type CSSProperties,
 } from "react";
 import { FloatingBubbles } from "@/components/floating-bubbles";
-import {
-  PRODUCT_ASSETS,
-  RESULT_AUTO_RESET_ENABLED,
-  RESULT_AUTO_RESET_SECONDS,
-  RESULT_ROUTINES,
-} from "@/lib/constants";
+import { RESULT_AUTO_RESET_ENABLED, RESULT_AUTO_RESET_SECONDS } from "@/lib/constants";
 import {
   fireRealisticConfetti,
   fireSnowConfetti,
 } from "@/lib/confetti-effects";
+import { useLang, useUiText } from "@/lib/i18n";
 import { recommendChoice } from "@/lib/recommend";
+import { PRODUCT_ASSETS, PRODUCT_NAMES, RESULT_COPY, RESULT_ROUTINES } from "@/lib/results";
 import { saveParticipant } from "@/lib/participant-save";
 import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
@@ -32,35 +29,6 @@ interface ResultScreenProps {
 
 // snow는 오래 지속되도록 realistic보다 훨씬 길게 잡는다.
 const SNOW_DURATION_MS = 10000;
-
-/**
- * PRODUCT_ASSETS 에 없는 제품용 자리표시자.
- */
-function AssetBox({
-  label,
-  className,
-  rounded = "rounded-2xl",
-  style,
-}: {
-  label: string;
-  className?: string;
-  rounded?: string;
-  style?: CSSProperties;
-}) {
-  return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        "flex items-center justify-center border-2 border-dashed border-event-primary/35 bg-event-primary/5 px-1 text-center text-[10px] leading-tight font-medium whitespace-pre-line text-event-primary/45",
-        rounded,
-        className,
-      )}
-      style={style}
-    >
-      {label}
-    </div>
-  );
-}
 
 /**
  * 결과 요소 등장 순서(ms). 흰 화면이 걷히는 동안(~700ms) 위에서부터 차례로 올라온다.
@@ -124,10 +92,13 @@ function useFitDescFont(deps: unknown) {
 /** 설문 완료 후 보여주는 추천 루틴 결과 화면. */
 export function ResultScreen({ answers, onReset }: ResultScreenProps) {
   const choice = useMemo(() => recommendChoice(answers), [answers]);
+  const { lang } = useLang();
+  const text = useUiText();
   const routine = RESULT_ROUTINES[choice];
+  const copy = RESULT_COPY[lang][choice];
   const savedOnce = useRef(false);
   const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
-  const descBoxRef = useFitDescFont(routine);
+  const descBoxRef = useFitDescFont(copy);
 
   // 결과 등장 시 confetti + 눈발 연출.
   useEffect(() => {
@@ -155,8 +126,9 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
   useEffect(() => {
     if (savedOnce.current) return;
     savedOnce.current = true;
-    void saveParticipant({ answers, result: routine.name });
-  }, [answers, routine.name]);
+    // 화면 언어와 상관없이 한국어 헤드라인으로 저장해 엑셀 집계가 언어별로 갈리지 않게 한다.
+    void saveParticipant({ answers, result: RESULT_COPY.ko[choice].headline });
+  }, [answers, choice]);
 
   return (
     <div
@@ -238,14 +210,14 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
               className="result-enter text-[24px] font-medium text-foreground"
               style={enterDelay(ENTER_DELAY.eyebrow)}
             >
-              {routine.eyebrow}
+              {copy.eyebrow}
             </p>
             <h2
               className="result-enter text-[34px] leading-tight font-black text-balance text-foreground"
               style={enterDelay(ENTER_DELAY.headline)}
             >
               <span className="box-decoration-clone bg-black/[0.07] px-2 py-1">
-                {routine.headline}
+                {copy.headline}
               </span>
             </h2>
           </div>
@@ -259,11 +231,12 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
               draggable={false}
               className="pointer-events-none absolute -top-3 right-0 -z-10 w-[94px] opacity-80"
             />
-            {routine.products.map((product, i) => {
-              const asset = PRODUCT_ASSETS[product.label];
+            {routine.products.map((productId, i) => {
+              const asset = PRODUCT_ASSETS[productId];
+              const productName = PRODUCT_NAMES[lang][productId];
               const productDelay = ENTER_DELAY.product + i * ENTER_DELAY.productStep;
               return (
-                <Fragment key={`${product.label}-${i}`}>
+                <Fragment key={`${productId}-${i}`}>
                   {i > 0 && (
                     <div
                       className="result-enter-fade mt-[40px] flex h-[180px] items-center"
@@ -278,25 +251,24 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
                     className="result-enter-pop flex w-[180px] flex-col items-center gap-3"
                     style={enterDelay(productDelay)}
                   >
-                    {/* 제품명은 한 줄 — 칸보다 조금 길면 양옆 여백으로 넘친다. */}
-                    <p className="h-7 text-center text-[20px] leading-7 font-bold whitespace-nowrap text-event-primary">
-                      {product.label}
+                    {/* 제품명은 한 줄 — 칸보다 조금 길면 양옆 여백으로 넘친다.
+                        외국어 제품명은 한국어보다 길어서 한 단계 작게 쓴다. */}
+                    <p
+                      className={cn(
+                        "h-7 text-center leading-7 font-bold whitespace-nowrap text-event-primary",
+                        lang === "ko" ? "text-[20px]" : "text-[17px]",
+                      )}
+                    >
+                      {productName}
                     </p>
                     <div className="flex h-[180px] items-end justify-center">
-                      {asset ? (
-                        <img
-                          src={asset.src}
-                          alt={product.label}
-                          draggable={false}
-                          className="w-auto object-contain"
-                          style={{ height: asset.height }}
-                        />
-                      ) : (
-                        <AssetBox
-                          label={`${product.label}\n제품컷`}
-                          className="h-[180px] w-[140px]"
-                        />
-                      )}
+                      <img
+                        src={asset.src}
+                        alt={productName}
+                        draggable={false}
+                        className="w-auto object-contain"
+                        style={{ height: asset.height }}
+                      />
                     </div>
                   </div>
                 </Fragment>
@@ -310,7 +282,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
             className="result-desc-box result-enter mt-8 rounded-[26px] px-6 py-6 text-center leading-relaxed text-white"
             style={enterDelay(ENTER_DELAY.desc)}
           >
-            {routine.description.map((line, li) => (
+            {copy.description.map((line, li) => (
               <p key={li} className="overflow-hidden whitespace-nowrap">
                 {line.map((run, ri) => (
                   <span
@@ -344,7 +316,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
               />
             </div>
             <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[23px] font-bold text-event-primary">
-              {routine.keyPoints.map((keyPoint, i) => (
+              {copy.keyPoints.map((keyPoint, i) => (
                 <Fragment key={keyPoint}>
                   {i > 0 && <span className="text-event-primary/40">|</span>}
                   <span>{keyPoint}</span>
@@ -384,7 +356,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
         className="result-enter-fade relative z-10 mt-4 flex shrink-0 items-center gap-2 rounded-full border border-event-primary/20 bg-white/40 px-6 py-2.5 text-[18px] font-medium text-event-primary/65 transition-colors active:bg-white/70 active:text-event-primary"
       >
         <RotateCcw className="size-4.5" />
-        처음으로
+        {text.startOver}
       </button>
 
       <canvas

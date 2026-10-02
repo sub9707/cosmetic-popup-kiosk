@@ -1,13 +1,10 @@
 import { app, ipcMain, BrowserWindow, shell } from "electron";
 import type { ParticipantInput } from "@shared/types";
-import { getQuestions } from "./store/questions";
 import { appendParticipant, getStatistics } from "./store/participants";
 import { exportExcel } from "./excel/export";
 import { getTitleBarVisible, setTitleBarVisible } from "./window";
 
 export function registerIpcHandlers(): void {
-  ipcMain.handle("kiosk:getQuestions", () => getQuestions());
-
   ipcMain.handle("kiosk:saveParticipant", (_event, input: ParticipantInput) => appendParticipant(input));
 
   ipcMain.handle("kiosk:getStatistics", () => getStatistics());
@@ -23,6 +20,6 @@ export function registerIpcHandlers(): void {
 
   ipcMain.on("kiosk:setTitleBarVisible", (_event, visible: boolean) => setTitleBarVisible(visible));
 
-  // data(참여 기록)·config(문항·번호)·logs 가 모두 들어 있는 userData 폴더를 연다.
+  // data(참여 기록)·config(참여번호)·logs 가 모두 들어 있는 userData 폴더를 연다.
   ipcMain.handle("kiosk:openDataFolder", () => shell.openPath(app.getPath("userData")));
 }

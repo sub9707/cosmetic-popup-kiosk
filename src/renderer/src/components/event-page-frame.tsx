@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { ExitConfirmModal } from "@/components/exit-confirm-modal";
 import { PinLockModal } from "@/components/pin-lock-modal";
 import { SettingsModal } from "@/components/settings-modal";
+import { useUiText } from "@/lib/i18n";
 
 interface EventPageFrameProps {
   children: ReactNode;
@@ -17,6 +18,7 @@ type SettingsPhase = "closed" | "pin" | "modal";
  * 810x1440 캔버스 전체를 채운다.
  */
 export function EventPageFrame({ children, showAdminControls = false }: EventPageFrameProps) {
+  const text = useUiText();
   const [settingsPhase, setSettingsPhase] = useState<SettingsPhase>("closed");
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -41,7 +43,7 @@ export function EventPageFrame({ children, showAdminControls = false }: EventPag
           <button
             type="button"
             onClick={() => setSettingsPhase("pin")}
-            aria-label="설정"
+            aria-label={text.settings}
             className="flex size-14 items-center justify-center rounded-full bg-background/70 text-event-primary/60 ring-1 ring-event-primary/15 backdrop-blur-sm transition-colors active:bg-event-primary-soft active:text-event-primary"
           >
             <Settings className="size-7" />
@@ -49,7 +51,7 @@ export function EventPageFrame({ children, showAdminControls = false }: EventPag
           <button
             type="button"
             onClick={() => setShowExitConfirm(true)}
-            aria-label="종료"
+            aria-label={text.exit}
             className="flex size-14 items-center justify-center rounded-full bg-background/70 text-event-primary/60 ring-1 ring-event-primary/15 backdrop-blur-sm transition-colors active:bg-event-primary-soft active:text-event-primary"
           >
             <Power className="size-7" />

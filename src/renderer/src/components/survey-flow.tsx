@@ -6,6 +6,7 @@ import { SurveyChoiceList } from "@/components/survey-choice-list";
 import { SurveyProgressBar } from "@/components/survey-progress-bar";
 import { SurveyQuestionText } from "@/components/survey-question-text";
 import { EVENT_LOGO, EVENT_NAME } from "@/lib/constants";
+import { useUiText } from "@/lib/i18n";
 import { playSound } from "@/lib/sound";
 import type { ChoiceLabel, EventSurveyQuestion } from "@shared/types";
 
@@ -21,6 +22,7 @@ interface SurveyFlowProps {
 }
 
 export function SurveyFlow({ questions, onComplete, onExit }: SurveyFlowProps) {
+  const text = useUiText();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, ChoiceLabel>>({});
   // 자동 넘김 대기(300ms) 중 연타가 들어오면 문항이 두 칸씩 넘어가므로, 넘어갈 때까지 입력을 막는다.
@@ -92,7 +94,7 @@ export function SurveyFlow({ questions, onComplete, onExit }: SurveyFlowProps) {
           className={NAV_BUTTON_CLASS}
         >
           <ChevronLeft className="-ml-1 size-6" strokeWidth={2.25} />
-          이전
+          {text.back}
         </button>
         <button
           type="button"
@@ -103,7 +105,7 @@ export function SurveyFlow({ questions, onComplete, onExit }: SurveyFlowProps) {
           className={NAV_BUTTON_CLASS}
         >
           <RotateCcw className="size-5" strokeWidth={2.25} />
-          처음으로
+          {text.startOver}
         </button>
       </nav>
     </EventPageFrame>

@@ -39,7 +39,6 @@ export interface ExportExcelResult {
 }
 
 export interface KioskAPI {
-  getQuestions(): Promise<EventSurveyQuestion[]>;
   saveParticipant(input: ParticipantInput): Promise<{ no: number }>;
   getStatistics(): Promise<KioskStatistics>;
   exportExcel(): Promise<ExportExcelResult>;

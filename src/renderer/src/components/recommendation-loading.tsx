@@ -1,4 +1,5 @@
 import { useEffect, type CSSProperties } from "react";
+import { useUiText } from "@/lib/i18n";
 
 // 전체 타임라인(ms) — 여기 숫자만 바꾸면 연출 속도를 조절할 수 있다.
 const TOTAL_DURATION_MS = 2200;
@@ -26,6 +27,8 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const HEAD_DASH = 6;
 
 export function RecommendationLoading({ onDone }: { onDone: () => void }) {
+  const text = useUiText();
+
   useEffect(() => {
     const timer = setTimeout(onDone, TOTAL_DURATION_MS);
     return () => clearTimeout(timer);
@@ -113,7 +116,7 @@ export function RecommendationLoading({ onDone }: { onDone: () => void }) {
       </div>
 
       <p className="loading-text absolute inset-x-0 bottom-[22%] text-center text-2xl font-light text-event-primary">
-        제품을 추천하고 있어요
+        {text.loading}
       </p>
     </div>
   );

@@ -28,7 +28,6 @@ npm run dist   # Windows 설치 파일 생성 → release/
 
 ```
 %APPDATA%\EventKiosk\
-  config\questions.json   설문 문항 (직접 수정 가능)
   data\YYYY-MM-DD.jsonl   날짜별 참여 기록
   logs\YYYY-MM-DD.log     오류 로그
 ```
