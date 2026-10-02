@@ -7,6 +7,7 @@ import { SurveyProgressBar } from "@/components/survey-progress-bar";
 import { SurveyQuestionText } from "@/components/survey-question-text";
 import { EVENT_LOGO, EVENT_NAME } from "@/lib/constants";
 import { useUiText } from "@/lib/i18n";
+import { pressHandlers } from "@/lib/press";
 import { playSound } from "@/lib/sound";
 import type { ChoiceLabel, EventSurveyQuestion } from "@shared/types";
 
@@ -88,7 +89,7 @@ export function SurveyFlow({ questions, onComplete, onExit }: SurveyFlowProps) {
       <nav className="flex h-28 shrink-0 items-center justify-between px-8">
         <button
           type="button"
-          onClick={handleBack}
+          {...pressHandlers(handleBack)}
           disabled={step === 0}
           aria-hidden={step === 0}
           className={NAV_BUTTON_CLASS}
@@ -98,10 +99,10 @@ export function SurveyFlow({ questions, onComplete, onExit }: SurveyFlowProps) {
         </button>
         <button
           type="button"
-          onClick={() => {
+          {...pressHandlers(() => {
             playSound("click");
             onExit();
-          }}
+          })}
           className={NAV_BUTTON_CLASS}
         >
           <RotateCcw className="size-5" strokeWidth={2.25} />

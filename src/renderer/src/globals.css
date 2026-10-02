@@ -499,9 +499,14 @@ textarea {
   user-select: text;
 }
 
+/*
+ * 터치 제스처(스크롤·확대)를 화면 전체에서 끈다 — 누르다 손가락이 조금 밀리면 브라우저가 스크롤로 판단해
+ * 누름을 취소해 버린다. 스크롤이 필요한 곳(설정 창 목록)만 touch-pan-y 로 다시 켠다.
+ */
+html,
+body,
 button {
-  /* 터치 모니터에서 더블탭 확대 판정 대기 없이 바로 반응하게 한다 */
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 img {

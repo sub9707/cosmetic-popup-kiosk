@@ -97,7 +97,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
         <section className="flex min-h-0 flex-1 flex-col gap-3">
           <p className="text-lg font-medium text-foreground">일자별 참여자</p>
-          <div className="flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1">
+          <div className="flex-1 touch-pan-y space-y-2 overflow-y-auto overscroll-contain pr-1">
             {stats?.byDate.length ? (
               stats.byDate.map((d) => (
                 <div key={d.date} className="flex items-center justify-between text-lg">

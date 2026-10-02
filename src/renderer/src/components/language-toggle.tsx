@@ -1,4 +1,5 @@
 import { LANG_LABELS, LANGS, useLang, useUiText } from "@/lib/i18n";
+import { pressHandlers } from "@/lib/press";
 import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
@@ -22,11 +23,11 @@ export function LanguageToggle({ className }: { className?: string }) {
           type="button"
           lang={code}
           aria-pressed={lang === code}
-          onClick={() => {
+          {...pressHandlers(() => {
             if (code === lang) return;
             playSound("click");
             setLang(code);
-          }}
+          })}
           className={cn(
             "flex h-12 items-center rounded-full px-4 text-[18px] font-semibold transition-colors active:scale-95",
             lang === code

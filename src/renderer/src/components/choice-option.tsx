@@ -1,4 +1,5 @@
 import type { ChoiceEmphasis } from "@/lib/constants";
+import { pressHandlers } from "@/lib/press";
 import { cn } from "@/lib/utils";
 import type { ChoiceLabel } from "@shared/types";
 
@@ -27,7 +28,7 @@ export function ChoiceOption({ label, text, emphasis = "first", selected, onSele
   return (
     <button
       type="button"
-      onClick={onSelect}
+      {...pressHandlers(onSelect)}
       aria-pressed={selected}
       className={cn(
         "relative flex min-h-[176px] w-full items-center justify-center rounded-lg border-2 py-5 pr-11 pl-[108px]",

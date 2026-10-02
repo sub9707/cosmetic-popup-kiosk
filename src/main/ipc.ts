@@ -2,10 +2,15 @@ import { app, ipcMain, BrowserWindow, shell } from "electron";
 import type { ParticipantInput } from "@shared/types";
 import { appendParticipant, getStatistics } from "./store/participants";
 import { exportExcel } from "./excel/export";
+import { countSession } from "./metrics";
 import { getTitleBarVisible, setTitleBarVisible } from "./window";
 
 export function registerIpcHandlers(): void {
-  ipcMain.handle("kiosk:saveParticipant", (_event, input: ParticipantInput) => appendParticipant(input));
+  ipcMain.handle("kiosk:saveParticipant", async (_event, input: ParticipantInput) => {
+    const saved = await appendParticipant(input);
+    countSession();
+    return saved;
+  });
 
   ipcMain.handle("kiosk:getStatistics", () => getStatistics());
 

@@ -1,7 +1,32 @@
-import type { CreateTypes, Options } from "canvas-confetti";
+import confetti, { type CreateTypes, type Options } from "canvas-confetti";
 
 // 흰색 + 밝은 테마 핑크(--event-primary 근사 hex)만 사용한다.
 const CONFETTI_COLORS = ["#ffffff", "#ec3e72"];
+
+/*
+ * confetti 캔버스와 인스턴스는 앱 전체에서 하나만 만들어 계속 다시 쓴다.
+ * 결과 화면이 뜰 때마다 새 캔버스를 만들면, 워커로 넘어간 화면 크기 캔버스가 해제되지 않고 쌓여
+ * 수십 건 뒤에는 GPU 메모리가 GB 단위로 불어나 앱 전체가 느려진다.
+ */
+let stageCanvas: HTMLCanvasElement | null = null;
+let stageInstance: CreateTypes | null = null;
+
+/** App 이 항상 띄워 두는 캔버스를 등록한다 (ref 콜백). */
+export function setConfettiCanvas(canvas: HTMLCanvasElement | null) {
+  if (canvas) stageCanvas = canvas;
+}
+
+export function getConfetti(): CreateTypes | null {
+  if (!stageCanvas) return null;
+  if (!stageInstance) {
+    // 해상도는 창 크기가 아니라 디자인 기준 캔버스 크기(810x1440 안팎)로 고정한다 — 화면이 커도 메모리가
+    // 늘지 않고, 조각 크기·퍼지는 범위가 디자인을 확인한 화면과 같은 비율로 보인다.
+    stageCanvas.width = stageCanvas.offsetWidth;
+    stageCanvas.height = stageCanvas.offsetHeight;
+    stageInstance = confetti.create(stageCanvas, { resize: false, useWorker: true });
+  }
+  return stageInstance;
+}
 
 /** canvas-confetti 데모의 "Realistic Look" 프리셋. 결과 등장 시 한 번 터뜨린다. */
 export function fireRealisticConfetti(instance: CreateTypes) {

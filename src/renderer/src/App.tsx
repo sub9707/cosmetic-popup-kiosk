@@ -3,6 +3,7 @@ import { MainScreen } from "@/components/main-screen";
 import { RecommendationLoading } from "@/components/recommendation-loading";
 import { ResultScreen } from "@/components/result-screen";
 import { SurveyFlow } from "@/components/survey-flow";
+import { setConfettiCanvas } from "@/lib/confetti-effects";
 import { HTML_LANG, LangProvider, type Lang } from "@/lib/i18n";
 import { flushPendingParticipants } from "@/lib/participant-save";
 import { QUESTIONS } from "@/lib/questions";
@@ -10,6 +11,14 @@ import { playSound } from "@/lib/sound";
 import type { ChoiceLabel } from "@shared/types";
 
 type Screen = "main" | "quiz" | "loading" | "result";
+
+/**
+ * 참여가 이만큼 끝날 때마다, 메인 화면에서 잠깐 아무도 안 만질 때 화면을 새로 불러온다.
+ * 종일 켜 두는 동안 혹시 쌓였을 메모리를 털어내는 안전망 — 미저장 기록·음량 설정은 localStorage 에 있어 유지된다.
+ */
+const RELOAD_AFTER_SESSIONS = 50;
+const RELOAD_IDLE_MS = 5000;
+let sessionsSinceLoad = 0;
 
 /** 메인 → 설문 → 로딩 → 결과 → N초 후 메인 상태 머신. */
 export function App() {
@@ -33,6 +42,18 @@ export function App() {
     void flushPendingParticipants();
   }, []);
 
+  useEffect(() => {
+    if (screen !== "main" || sessionsSinceLoad < RELOAD_AFTER_SESSIONS) return;
+    const timer = setTimeout(() => window.location.reload(), RELOAD_IDLE_MS);
+    // 그 사이 누가 화면을 만지면 이번엔 건너뛰고, 다음에 메인으로 돌아올 때 다시 시도한다.
+    const cancel = () => clearTimeout(timer);
+    window.addEventListener("pointerdown", cancel);
+    return () => {
+      cancel();
+      window.removeEventListener("pointerdown", cancel);
+    };
+  }, [screen]);
+
   let content: ReactNode;
   if (screen === "quiz") {
     content = (
@@ -50,6 +71,7 @@ export function App() {
     content = (
       <RecommendationLoading
         onDone={() => {
+          sessionsSinceLoad += 1;
           setScreen("result");
           playSound("result");
         }}
@@ -73,5 +95,11 @@ export function App() {
     );
   }
 
-  return <LangProvider value={langValue}>{content}</LangProvider>;
+  return (
+    <LangProvider value={langValue}>
+      {content}
+      {/* 결과 화면 confetti 용 캔버스. 화면이 바뀌어도 없애지 않고 하나를 계속 쓴다 (confetti-effects 참고). */}
+      <canvas ref={setConfettiCanvas} className="pointer-events-none absolute inset-0 z-40 h-full w-full" />
+    </LangProvider>
+  );
 }

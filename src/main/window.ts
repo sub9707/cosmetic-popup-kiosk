@@ -1,6 +1,6 @@
 import { app, BrowserWindow, shell } from "electron";
 import path from "node:path";
-import { logError } from "./store/log";
+import { logError, logInfo } from "./store/log";
 
 const isDev = !app.isPackaged;
 
@@ -45,6 +45,17 @@ export function createWindow(): void {
   });
   win.webContents.on("unresponsive", () => {
     void logError("renderer unresponsive", "window became unresponsive");
+  });
+  win.webContents.on("responsive", () => {
+    void logInfo("renderer responsive", "window became responsive again");
+  });
+  // 화면 쪽(렌더러)에서 난 오류는 메인 프로세스 로그에 안 잡히므로, 콘솔 오류를 그대로 옮겨 적는다.
+  win.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+    if (level >= 3) void logError("renderer console", `${message} (${sourceId}:${line})`);
+  });
+  // 시작할 때 한 번, 그리고 화면을 다시 불러올 때마다(자동 새로고침·렌더러 재시작) 남는다.
+  win.webContents.on("did-finish-load", () => {
+    void logInfo("renderer loaded", win.webContents.getURL());
   });
 
   win.webContents.setWindowOpenHandler(({ url }) => {

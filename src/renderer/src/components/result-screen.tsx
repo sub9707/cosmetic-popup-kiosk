@@ -1,4 +1,3 @@
-import confetti from "canvas-confetti";
 import { ChevronRight, RotateCcw, Sparkle } from "lucide-react";
 import {
   Fragment,
@@ -13,8 +12,10 @@ import { RESULT_AUTO_RESET_ENABLED, RESULT_AUTO_RESET_SECONDS } from "@/lib/cons
 import {
   fireRealisticConfetti,
   fireSnowConfetti,
+  getConfetti,
 } from "@/lib/confetti-effects";
 import { useLang, useUiText } from "@/lib/i18n";
+import { pressHandlers } from "@/lib/press";
 import { recommendChoice } from "@/lib/recommend";
 import { PRODUCT_ASSETS, PRODUCT_NAMES, RESULT_COPY, RESULT_ROUTINES } from "@/lib/results";
 import { saveParticipant } from "@/lib/participant-save";
@@ -97,15 +98,13 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
   const routine = RESULT_ROUTINES[choice];
   const copy = RESULT_COPY[lang][choice];
   const savedOnce = useRef(false);
-  const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
   const descBoxRef = useFitDescFont(copy);
 
   // 결과 등장 시 confetti + 눈발 연출.
   useEffect(() => {
-    const canvas = confettiCanvasRef.current;
-    if (!canvas) return;
+    const instance = getConfetti();
+    if (!instance) return;
 
-    const instance = confetti.create(canvas, { resize: true, useWorker: true });
     let cancelled = false;
 
     fireRealisticConfetti(instance);
@@ -345,25 +344,22 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
         }}
       />
 
-      {/* 처음으로 — 눈에 띄지 않게 로고 아래 고스트 버튼 */}
+      {/* 처음으로 — 눈에 띄지 않게 로고 아래 고스트 버튼.
+          보이는 크기는 작게 두되, before 로 터치 영역만 사방 20px 넓혀 대충 눌러도 먹게 한다. */}
       <button
         type="button"
-        onClick={() => {
+        {...pressHandlers(() => {
           playSound("click");
           onReset();
-        }}
+        })}
         style={enterDelay(ENTER_DELAY.footer)}
-        className="result-enter-fade relative z-10 mt-4 flex shrink-0 items-center gap-2 rounded-full border border-event-primary/20 bg-white/40 px-6 py-2.5 text-[18px] font-medium text-event-primary/65 transition-colors active:bg-white/70 active:text-event-primary"
+        className="result-enter-fade relative z-10 mt-4 flex shrink-0 items-center gap-2 rounded-full border border-event-primary/20 bg-white/40 px-6 py-2.5 text-[18px] font-medium text-event-primary/65 transition-colors before:absolute before:-inset-5 before:content-[''] active:bg-white/70 active:text-event-primary"
       >
         <RotateCcw className="size-4.5" />
         {text.startOver}
       </button>
 
-      <canvas
-        ref={confettiCanvasRef}
-        className="pointer-events-none absolute inset-0 z-40 h-full w-full"
-      />
-
+      {/* confetti 캔버스는 App 이 항상 띄워 둔다(z-40) — 이 흰 막(z-50)보다는 아래, 결과 내용보다는 위. */}
       <div
         className="result-whiteout pointer-events-none absolute inset-0 z-50 bg-white"
         aria-hidden="true"

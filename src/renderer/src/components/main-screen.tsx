@@ -4,6 +4,7 @@ import { EventPageFrame } from "@/components/event-page-frame";
 import { LanguageToggle } from "@/components/language-toggle";
 import { EVENT_HERO, EVENT_LOGO, EVENT_NAME } from "@/lib/constants";
 import { useUiText } from "@/lib/i18n";
+import { pressHandlers } from "@/lib/press";
 
 interface MainScreenProps {
   onStart: () => void;
@@ -23,7 +24,7 @@ export function MainScreen({ onStart }: MainScreenProps) {
     <EventPageFrame showAdminControls>
       <button
         type="button"
-        onClick={onStart}
+        {...pressHandlers(onStart)}
         aria-label={text.landingCta}
         className="group flex min-h-0 flex-1 flex-col"
       >
