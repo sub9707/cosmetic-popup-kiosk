@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** 현재 몇 번째 문항인지 가로 블록으로 표시 (0-indexed current). */
+/** 문항 진행 표시. current 는 0부터 시작한다. */
 export function SurveyProgressBar({ total, current }: { total: number; current: number }) {
   return (
     <div className="flex w-full gap-2" role="progressbar" aria-valuenow={current + 1} aria-valuemax={total}>

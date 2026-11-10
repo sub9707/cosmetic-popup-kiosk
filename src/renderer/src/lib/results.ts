@@ -1,10 +1,7 @@
 import type { ChoiceLabel } from "@shared/types";
 import type { Lang } from "./i18n";
 
-/**
- * 제품 컷 이미지 + 표시 높이(px, 810x1440 기준).
- * 높이는 각 에셋 원본 픽셀 높이에 동일 배율(≈0.82)을 곱해 산출 → 제품끼리 실제 크기 비율이 유지된다.
- */
+/** 제품 이미지와 표시 높이(px). 원본 높이에 같은 배율(약 0.82)을 적용해 제품 간 크기 비율을 맞췄다. */
 export const PRODUCT_ASSETS = {
   bubbleBooster: { src: "assets/bubble-booster.png", height: 124 },
   tonerPad: { src: "assets/toner-pad.png", height: 110 },
@@ -37,23 +34,18 @@ export const PRODUCT_NAMES: Record<Lang, Record<ProductId, string>> = {
     eyePatch: "콜라겐 아이패치",
     maskPack: "콜라겐 마스크팩",
   },
-  // 제품명은 억지로 옮기지 않고 중국어·일본어 화면에서도 영어 이름을 그대로 쓴다.
+  // 중국어, 일본어 화면에서도 제품명은 영문 표기를 사용
   zh: EN_PRODUCT_NAMES,
   ja: EN_PRODUCT_NAMES,
   en: EN_PRODUCT_NAMES,
 };
 
-/** 설문 최다 선택 라벨(A~D)에 대응하는 결과 루틴 — 언어와 무관한 부분. */
 export interface ResultRoutine {
-  /** 좌 → 우 3단계 제품 (사이에 > 화살표) */
+  /** 사용 순서대로 나열한 추천 제품 3종 */
   products: [ProductId, ProductId, ProductId];
 }
 
-/**
- * 선택 비율(최다 선택 라벨)에 따른 결과 매핑.
- *  A → 오늘은 쌩얼 DAY  / B → 가볍게 꾸미는 데일리 DAY
- *  C → FULL MAKE-UP DAY / D → 내일은 정말 중요한 D-DAY
- */
+/** 최다 선택 라벨별 추천 루틴. A: 쌩얼, B: 데일리 메이크업, C: 풀메이크업, D: 중요한 날 전날 */
 export const RESULT_ROUTINES: Record<ChoiceLabel, ResultRoutine> = {
   A: { products: ["bubbleBooster", "serum", "cream"] },
   B: { products: ["tonerPad", "serum", "jellyMist"] },
@@ -61,21 +53,20 @@ export const RESULT_ROUTINES: Record<ChoiceLabel, ResultRoutine> = {
   D: { products: ["tonerPad", "serum", "maskPack"] },
 };
 
-/** 결과 설명 문구 조각. bold=true 인 조각만 강조 처리한다. */
+/** 설명 문구 조각. bold 인 조각만 굵게 표시한다. */
 export interface ResultTextRun {
   text: string;
   bold?: boolean;
 }
 
-/** 결과 화면 문구 (언어별). */
 export interface ResultCopy {
-  /** 헤드라인 위 작은 소제목 (예: "오늘은 쌩얼 DAY!") */
+  /** 헤드라인 위 소제목 */
   eyebrow: string;
-  /** 회색 하이라이트가 깔린 큰 헤드라인. 한국어 헤드라인이 참가자 기록/엑셀의 결과값으로 저장된다. */
+  /** 헤드라인. 한국어 값이 참여 기록의 result 로 저장된다. */
   headline: string;
-  /** 핑크 박스 안 설명 문구 (줄 = 문구 조각 배열). 줄마다 한 줄로 보여주므로 줄을 짧게 유지한다. */
+  /** 설명 문구. 줄 단위 배열이며 각 줄은 줄바꿈 없이 한 줄로 표시된다. */
   description: ResultTextRun[][];
-  /** KEY POINT 아래 키워드 3개 */
+  /** KEY POINT 키워드 */
   keyPoints: string[];
 }
 

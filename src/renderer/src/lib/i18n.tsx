@@ -4,7 +4,7 @@ import { createContext, useContext, type ReactNode } from "react";
 export const LANGS = ["ko", "zh", "ja", "en"] as const;
 export type Lang = (typeof LANGS)[number];
 
-/** 언어 토글에 보이는 이름 — 각 언어 사용자가 자기 언어를 바로 알아보도록 그 언어로 적는다. */
+/** 언어 토글 표시명 (각 언어로 표기) */
 export const LANG_LABELS: Record<Lang, string> = {
   ko: "한국어",
   zh: "中文",
@@ -12,7 +12,7 @@ export const LANG_LABELS: Record<Lang, string> = {
   en: "English",
 };
 
-/** <html lang> 값 — 한자 글꼴·줄바꿈 규칙이 언어에 맞게 적용된다 (globals.css 의 :lang 규칙). */
+/** <html lang> 값. globals.css 의 :lang 규칙(글꼴, 줄바꿈)에 사용된다. */
 export const HTML_LANG: Record<Lang, string> = {
   ko: "ko",
   zh: "zh-CN",
@@ -114,7 +114,6 @@ export function useLang() {
   return useContext(LangContext);
 }
 
-/** 현재 언어의 화면 문구. */
 export function useUiText(): UiText {
   return UI_TEXT[useLang().lang];
 }

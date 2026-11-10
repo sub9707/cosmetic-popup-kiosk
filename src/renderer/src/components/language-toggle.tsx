@@ -3,7 +3,7 @@ import { pressHandlers } from "@/lib/press";
 import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
-/** 메인 화면 우상단 언어 선택 (한/중/일/영). */
+/** 메인 화면 언어 선택 토글 */
 export function LanguageToggle({ className }: { className?: string }) {
   const { lang, setLang } = useLang();
   const text = useUiText();

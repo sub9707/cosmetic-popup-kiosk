@@ -1,17 +1,15 @@
 import { useSyncExternalStore } from "react";
 
-/**
- * 효과음 재생기 — Web Audio 로 미리 디코딩해 둔 버퍼를 재생한다.
- * <audio> 는 누를 때마다 지연이 있고 연타하면 소리가 씹히지만, 버퍼 재생은 즉시·겹쳐서 난다.
- *
- * 한 효과가 여러 파일이면(result-1 + result-2 처럼) 같은 시각에 동시에 재생한다.
+/*
+ * 효과음 재생. Web Audio 로 미리 디코딩한 버퍼를 재생해 <audio> 와 달리 지연 없이 겹쳐 재생된다.
+ * 파일이 여러 개인 효과음은 같은 시각에 동시에 재생한다.
  */
 const SOUND_FILES = {
-  /** 메인 화면 시작 */
+  /** 메인 화면 시작 버튼 */
   start: ["sounds/main-button.wav"],
-  /** 설문 선택지·이전·처음으로 등 일반 버튼 */
+  /** 일반 버튼 */
   click: ["sounds/button-click.wav"],
-  /** 결과 분석 로딩 */
+  /** 추천 로딩 */
   loading: ["sounds/loading-1.wav", "sounds/loading-2.wav"],
   /** 결과 화면 등장 */
   result: ["sounds/result-1.wav", "sounds/result-2.wav"],
@@ -71,7 +69,7 @@ function loadBuffer(src: string) {
   return pending;
 }
 
-/** 앱 시작 시 모든 효과음을 미리 디코딩한다 — 첫 재생부터 지연이 없게. */
+/** 첫 재생 지연이 없도록 앱 시작 시 모든 효과음을 미리 디코딩한다. */
 export function preloadSounds() {
   Object.values(SOUND_FILES)
     .flat()
@@ -83,7 +81,7 @@ export async function playSound(name: SoundName) {
   if (context.state === "suspended") void context.resume();
 
   const loaded = await Promise.all(SOUND_FILES[name].map(loadBuffer));
-  // 여러 파일을 같은 기준 시각에 예약해야 정확히 동시에 시작된다.
+  // 같은 시각으로 예약해 동시에 시작
   const startAt = context.currentTime + 0.01;
   for (const buffer of loaded) {
     if (!buffer) continue;
@@ -104,7 +102,7 @@ export function setSoundSettings(next: Partial<SoundSettings>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch {
-    // 저장 실패해도 이번 실행 동안은 설정이 유지된다.
+    // 저장에 실패해도 현재 실행 중에는 설정이 유지된다.
   }
   listeners.forEach((listener) => listener());
 }

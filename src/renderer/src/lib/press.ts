@@ -1,11 +1,10 @@
 import type { MouseEvent, PointerEvent } from "react";
 
-/**
- * 터치 화면용 누름 처리 — onClick 대신 버튼에 펼쳐 넣는다: <button {...pressHandlers(fn)}>
+/*
+ * 터치 화면용 버튼 누름 처리. onClick 대신 사용한다: <button {...pressHandlers(fn)}>
  *
- * click 은 "짧게, 움직이지 않고" 눌렀을 때만 생긴다. 행사장 대형 터치 모니터에서는 꾹 누르거나
- * (Windows 가 우클릭으로 처리) 누르다 손가락이 살짝 밀리는(스크롤로 판단돼 취소) 일이 잦아 버튼이
- * 안 먹힌다. 그래서 누른 시간·중간 움직임과 상관없이, 손을 뗀 위치가 그 버튼 위면 누른 것으로 친다.
+ * 대형 터치 모니터에서는 길게 누르거나(우클릭으로 처리) 누르는 중 손가락이 밀리면(스크롤로 판단)
+ * click 이 발생하지 않는다. 누른 시간이나 이동과 관계없이 손을 뗀 위치가 버튼 위면 누른 것으로 처리한다.
  */
 const pressed = new Map<number, Element>();
 
@@ -14,7 +13,7 @@ export function pressHandlers(onPress: () => void) {
     onPointerDown(e: PointerEvent<HTMLElement>) {
       if (e.pointerType === "mouse" && e.button !== 0) return;
       pressed.set(e.pointerId, e.currentTarget);
-      // 손가락이 버튼 밖으로 나갔다 들어와도 뗄 때의 pointerup 을 이 버튼이 받게 한다.
+      // 버튼 밖으로 벗어났다 돌아와도 pointerup 을 받을 수 있도록 캡처
       e.currentTarget.setPointerCapture(e.pointerId);
     },
     onPointerUp(e: PointerEvent<HTMLElement>) {
@@ -26,7 +25,7 @@ export function pressHandlers(onPress: () => void) {
     onPointerCancel(e: PointerEvent<HTMLElement>) {
       pressed.delete(e.pointerId);
     },
-    // 포인터로 누른 건 위에서 이미 처리했다. 키보드(Enter/Space)로 누른 click 만 받는다.
+    // 포인터 입력은 위에서 처리하므로 키보드(Enter/Space)로 발생한 click 만 처리
     onClick(e: MouseEvent<HTMLElement>) {
       if (e.detail === 0) onPress();
     },

@@ -5,7 +5,7 @@ interface ExitConfirmModalProps {
   onCancel: () => void;
 }
 
-/** 앱 종료 전 확인용 커스텀 프롬프트 (키오스크 모드라 OS 기본 confirm 대신 직접 구현). */
+/** 앱 종료 확인 모달. 키오스크 모드에서는 OS 기본 confirm 대화상자를 쓰지 않는다. */
 export function ExitConfirmModal({ onConfirm, onCancel }: ExitConfirmModalProps) {
   const text = useUiText();
 

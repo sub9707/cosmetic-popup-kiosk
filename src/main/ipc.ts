@@ -25,6 +25,6 @@ export function registerIpcHandlers(): void {
 
   ipcMain.on("kiosk:setTitleBarVisible", (_event, visible: boolean) => setTitleBarVisible(visible));
 
-  // data(참여 기록)·config(참여번호)·logs 가 모두 들어 있는 userData 폴더를 연다.
+  // userData 폴더 (data, config, logs)
   ipcMain.handle("kiosk:openDataFolder", () => shell.openPath(app.getPath("userData")));
 }

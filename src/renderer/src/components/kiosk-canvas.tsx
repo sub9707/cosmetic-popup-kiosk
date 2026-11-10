@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 
-/** 2560x1440 모니터에서 확인한 9:16 레이아웃 실측 크기. 디자인 기준 해상도를 고정하는 값이라 바꾸면 안 된다. */
+/** 디자인 기준 해상도 (9:16). 모든 화면의 px 값이 이 크기 기준이다. */
 const DESIGN_WIDTH = 810;
 const DESIGN_HEIGHT = 1440;
 
@@ -16,12 +16,8 @@ function measure(): CanvasSize {
 }
 
 /**
- * 실제 창 크기와 무관하게 항상 DESIGN_WIDTH x DESIGN_HEIGHT 기준 배율로 그린 화면을 그대로 확대/축소해서
- * 보여준다. 해상도가 달라져도 폰트 크기, 이미지 크기가 달라지지 않는다.
- *
- * 창 비율이 9:16과 딱 맞지 않으면 남는 방향으로만 캔버스를 조금 늘려 창을 꽉 채운다 — 바깥 여백을
- * 따로 칠하면 화면마다 배경(흰 바탕+핑크 띠, 결과 화면 핑크 등)이 달라 경계가 드러나기 때문이다.
- * 각 화면은 가운데 정렬이라 늘어난 폭/높이는 자기 배경으로 자연스럽게 채워진다.
+ * 창 크기와 관계없이 기준 해상도로 그린 화면을 비율에 맞춰 확대/축소한다.
+ * 창 비율이 9:16 과 다르면 레터박스 대신 남는 방향으로 캔버스를 늘려 각 화면의 배경으로 채운다.
  */
 export function KioskCanvas({ children }: { children: ReactNode }) {
   const [size, setSize] = useState<CanvasSize>(measure);

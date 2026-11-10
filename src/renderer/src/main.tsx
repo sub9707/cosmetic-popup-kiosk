@@ -7,7 +7,7 @@ import { preloadSounds } from "./lib/sound";
 
 preloadSounds();
 
-// Windows 터치는 꾹 누르면 우클릭(contextmenu)으로 처리한다 — 키오스크에는 우클릭 메뉴가 필요 없으니 막는다.
+// 터치를 길게 누르면 우클릭으로 처리되므로 컨텍스트 메뉴를 막는다.
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 
 createRoot(document.getElementById("root")!).render(

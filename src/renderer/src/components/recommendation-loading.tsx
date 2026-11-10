@@ -1,14 +1,14 @@
 import { useEffect, type CSSProperties } from "react";
 import { useUiText } from "@/lib/i18n";
 
-// 전체 타임라인(ms) — 여기 숫자만 바꾸면 연출 속도를 조절할 수 있다.
+// 연출 타이밍(ms)
 const TOTAL_DURATION_MS = 2200;
 const ORBIT_START_MS = 300;
 const ORBIT_DURATION_MS = 1400;
 const BUBBLE_FLASH_START_MS = 1900;
 const BUBBLE_FLASH_DURATION_MS = 150;
 
-// result-background.png 속 버블의 실제 위치/크기 (이미지 기준 좌상단 %, 폭 %). 배경 이미지를 바꾸면 같이 맞춰야 한다.
+// result-background.png 안 버블의 위치와 크기(%). 배경 이미지를 바꾸면 함께 수정해야 한다.
 const BUBBLE_LEFT = 12;
 const BUBBLE_TOP = 24;
 const BUBBLE_WIDTH = 76;
@@ -16,7 +16,6 @@ const BUBBLE_WIDTH = 76;
 const LOGO_TOP = 52;
 const LOGO_WIDTH = 46;
 
-// result-circle.png 위치/크기/투명도 (결과 화면과 동일한 값).
 const CIRCLE_WIDTH = 84;
 const CIRCLE_OPACITY = 0.55;
 const CIRCLE_TOP = 43;
@@ -75,7 +74,7 @@ export function RecommendationLoading({ onDone }: { onDone: () => void }) {
             </linearGradient>
           </defs>
 
-          {/* 궤도를 따라 한 바퀴만큼 차오르는 링. 다 채워지면 그대로 멈춰 있는다(리셋/재생 없음). */}
+          {/* 한 바퀴 채워진 뒤 그대로 멈추는 링 */}
           <circle
             cx="50"
             cy="50"
@@ -87,7 +86,7 @@ export function RecommendationLoading({ onDone }: { onDone: () => void }) {
             style={orbitTiming}
           />
 
-          {/* 채워지는 끝단에서 함께 이동하는 밝은 헤드. 링과 같은 offset을 공유해 정확히 끝점에 붙는다. */}
+          {/* 링 끝단을 따라 이동하는 하이라이트 */}
           <circle
             cx="50"
             cy="50"

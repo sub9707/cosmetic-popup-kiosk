@@ -2,9 +2,8 @@ import type { EventSurveyQuestion } from "@shared/types";
 import type { Lang } from "./i18n";
 
 /**
- * 설문 문항 (언어별). 앱에 그대로 번들되므로 문항을 바꾸려면 여기를 고치고 다시 빌드한다.
- * 모든 언어가 같은 id·순서·A~D 를 가져야 한다 — 답변은 라벨(A~D)로만 저장된다.
- * q5 는 마지막 줄(제품명)을 굵게 보여주므로(CHOICE_EMPHASIS) 번역도 제품명을 마지막 줄에 둔다.
+ * 언어별 설문 문항. 답변은 라벨(A~D)로만 저장되므로 모든 언어가 같은 id, 순서, 선택지 구성을 유지해야 한다.
+ * q5 는 마지막 줄을 강조(CHOICE_EMPHASIS)하므로 번역에서도 제품명을 마지막 줄에 둔다.
  */
 export const QUESTIONS: Record<Lang, EventSurveyQuestion[]> = {
   ko: [

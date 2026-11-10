@@ -11,7 +11,7 @@ export interface EventSurveyQuestion {
 export interface ParticipantInput {
   answers: ChoiceLabel[];
   result: string;
-  /** 저장 재시도 시 원래 완료 시각을 유지하기 위해 렌더러가 넘긴다 (YYYY-MM-DDTHH:mm:ss). */
+  /** 재시도 시 최초 완료 시각을 유지하기 위해 렌더러에서 전달 (YYYY-MM-DDTHH:mm:ss) */
   createdAt?: string;
 }
 
@@ -34,7 +34,7 @@ export interface ExportExcelResult {
   ok: boolean;
   canceled?: boolean;
   path?: string;
-  /** 실패 사유 — 설정 창에 그대로 보여준다. */
+  /** 실패 사유 (설정 창에 표시) */
   error?: string;
 }
 
@@ -45,6 +45,6 @@ export interface KioskAPI {
   quitApp(): void;
   getTitleBarVisible(): Promise<boolean>;
   setTitleBarVisible(visible: boolean): void;
-  /** userData 폴더(data·config·logs)를 탐색기로 연다. 실패 시 오류 메시지, 성공 시 빈 문자열. */
+  /** userData 폴더를 탐색기로 연다. 성공 시 빈 문자열, 실패 시 오류 메시지를 반환한다. */
   openDataFolder(): Promise<string>;
 }

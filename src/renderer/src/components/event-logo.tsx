@@ -6,7 +6,7 @@ interface EventLogoProps {
   size?: "lg" | "sm";
 }
 
-/** 행사 로고. lg는 메인 화면, sm은 설문 화면 상단용 (810px 폭 캔버스 기준). */
+/** 행사 로고. lg: 메인 화면, sm: 설문 화면 */
 export function EventLogo({ name, logo, size = "lg" }: EventLogoProps) {
   if (logo) {
     return (

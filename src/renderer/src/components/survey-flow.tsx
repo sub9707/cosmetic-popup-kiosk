@@ -26,10 +26,9 @@ export function SurveyFlow({ questions, onComplete, onExit }: SurveyFlowProps) {
   const text = useUiText();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, ChoiceLabel>>({});
-  // 자동 넘김 대기(300ms) 중 연타가 들어오면 문항이 두 칸씩 넘어가므로, 넘어갈 때까지 입력을 막는다.
+  // 자동 넘김 대기 중 연속 입력으로 문항을 건너뛰지 않도록 막는다.
   const advancingRef = useRef(false);
-  // 자동 넘김 타이머 — 대기 중에 "처음으로"로 화면을 떠나면 반드시 취소해야 한다.
-  // 안 그러면 마지막 문항 선택 직후 처음으로를 눌렀을 때 메인에서 로딩으로 넘어가고 결과까지 저장된다.
+  // 대기 중 화면을 벗어나면 타이머를 취소해야 메인 화면에서 결과로 넘어가는 일이 없다.
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => {
@@ -67,15 +66,14 @@ export function SurveyFlow({ questions, onComplete, onExit }: SurveyFlowProps) {
   return (
     <EventPageFrame>
       <div className="flex min-h-0 flex-1 flex-col justify-center px-12 pt-4">
-        {/* 로고 + 진행률: 문항이 바뀌어도 그대로인 머리 부분. */}
         <div className="flex flex-col items-center gap-7">
           <EventLogo name={EVENT_NAME} logo={EVENT_LOGO} size="sm" />
           <SurveyProgressBar total={questions.length} current={step} />
         </div>
 
-        {/* 문항이 바뀔 때마다 key 로 다시 마운트해 등장 애니메이션을 준다. */}
+        {/* 문항마다 key 로 다시 마운트해 등장 애니메이션 적용 */}
         <div key={question.id} className="question-enter mt-8 flex flex-col gap-9">
-          {/* 문항 텍스트 자리를 3줄 높이로 예약해서, 아래 선택지 위치가 흔들리지 않게 한다. */}
+          {/* 질문 영역 높이를 3줄로 고정해 선택지 위치를 유지 */}
           <div className="flex min-h-[180px] items-center justify-center">
             <SurveyQuestionText question={question} />
           </div>
@@ -84,8 +82,7 @@ export function SurveyFlow({ questions, onComplete, onExit }: SurveyFlowProps) {
         </div>
       </div>
 
-      {/* 대형 세로 모니터는 상단이 손에 닿지 않을 수 있어, 이동 버튼은 모두 하단에 모은다.
-          이전 버튼은 첫 문항에서도 자리를 차지해(invisible) 레이아웃이 흔들리지 않는다. */}
+      {/* 세로 모니터에서 손이 닿도록 하단에 배치. 첫 문항에서 이전 버튼은 숨기되 자리는 유지한다. */}
       <nav className="flex h-28 shrink-0 items-center justify-between px-8">
         <button
           type="button"
