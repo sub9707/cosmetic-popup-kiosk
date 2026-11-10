@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* S-Core Dream: 굵기별 개별 파일 9종 중 실제 사용하는 300~900만 등록한다. */
+/* S-Core Dream: 사용하는 300~900 굵기만 등록 */
 @font-face {
   font-family: "S-Core Dream";
   src: url("/fonts/SCDream3.otf") format("opentype");
@@ -51,10 +51,7 @@
   font-display: swap;
 }
 
-/*
- * Pretendard Variable (SIL OFL 1.1).
- * 메인/설문 화면(.event-screen)에서만 쓰고, 로딩·결과 화면은 S-Core Dream 을 쓴다.
- */
+/* Pretendard Variable (SIL OFL 1.1): 메인/설문 화면(.event-screen) 전용 */
 @font-face {
   font-family: "Pretendard Variable";
   src: url("/fonts/PretendardVariable.woff2") format("woff2-variations");
@@ -70,7 +67,7 @@
   --color-border: var(--border);
   --color-ring: var(--ring);
 
-  /* 행사 테마 — 브랜드 핑크 토큰 */
+  /* 행사 테마 컬러 */
   --color-event-primary: var(--event-primary);
   --color-event-primary-foreground: var(--event-primary-foreground);
   --color-event-primary-soft: var(--event-primary-soft);
@@ -134,10 +131,7 @@
   animation: loading-text-in 300ms ease-out 150ms both;
 }
 
-/*
- * 궤도 링: 한 바퀴 분량(circumference)만큼 차오르고 나면 그대로 멈춘다 — 다 채운 뒤
- * 다시 비웠다가 그리는 리셋 없음. dashoffset을 circumference→0으로 한 번만 움직인다.
- */
+/* 로딩 궤도 링: 한 바퀴 채운 뒤 정지. --circumference 는 컴포넌트에서 지정 */
 @keyframes orbit-progress {
   0% {
     stroke-dashoffset: var(--circumference);
@@ -154,7 +148,6 @@
 
 .orbit-fill,
 .orbit-head {
-  --circumference: 263.9;
   animation-name: orbit-progress;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   animation-fill-mode: both;
@@ -167,8 +160,7 @@
     drop-shadow(0 0 10px var(--event-primary));
 }
 
-/* 채워지는 끝단의 밝은 헤드. .orbit-fill과 완전히 같은 dashoffset 애니메이션을 타므로
-   짧은 실선이 항상 채워진 구간의 맨 끝(=진행 중인 지점)에 정확히 붙어서 이동한다. */
+/* 링 끝단 하이라이트. .orbit-fill 과 같은 애니메이션을 공유해 끝점을 따라 이동한다. */
 .orbit-head {
   stroke: white;
   stroke-width: 2.6;
@@ -195,11 +187,7 @@
   pointer-events: none;
 }
 
-/*
- * 결과 화면 가장자리에 떠다니는 장식용 방울들. 단순 왕복(alternate)이 아니라 서로 다른
- * 중간 지점을 거쳐 원래 자리로 돌아오는 순환 경로라, 갔다가 그대로 되돌아오는 느낌 없이
- * 부유하는 듯한 인상을 준다.
- */
+/* 결과 화면 장식 방울: 중간 지점을 거쳐 원위치로 돌아오는 순환 경로 */
 @keyframes bubble-drift {
   0% {
     transform: rotate(var(--rotate, 0deg)) translate(0, 0);
@@ -223,7 +211,7 @@
   animation-iteration-count: infinite;
 }
 
-/* 결과 화면 진입 시 화면 전체가 흰색이었다가 서서히 사라지며 결과가 드러난다 */
+/* 결과 화면 진입 시 흰 화면에서 서서히 전환 */
 @keyframes result-whiteout {
   0%,
   12% {
@@ -238,12 +226,7 @@
   animation: result-whiteout 700ms ease-out both;
 }
 
-/*
- * 결과 화면 장식 — 튀지 않게 느리고 옅게. 반짝임은 한 번 지나간 뒤 한동안 쉬어서
- * 계속 번쩍이는 느낌이 들지 않게 한다.
- */
-
-/* 상단 MFC 로고: 둥실 떠 있는 움직임 */
+/* 결과 화면 상단 로고 부유 효과 */
 @keyframes result-logo-float {
   0%,
   100% {
@@ -259,10 +242,9 @@
 }
 
 /*
- * 결과 요소 순차 등장 — 지연값은 컴포넌트에서 animation-delay 로 준다.
- * 첫 프레임에 visibility: hidden 을 줘서, 등장 전 투명한 동안에는 터치도 먹지 않게 한다(처음으로 버튼 등).
- * fill-mode 는 backwards: 대기 중엔 첫 프레임(숨김)으로 있고, 끝나면 transform 을 남기지 않아
- * 글자가 레이어로 굳어 흐려지는 일이 없다.
+ * 결과 요소 순차 등장. 지연은 컴포넌트에서 animation-delay 로 지정한다.
+ * - 시작 프레임에 visibility: hidden 을 줘 등장 전에는 터치되지 않게 한다.
+ * - fill-mode backwards 로 종료 후 transform 이 남지 않아 텍스트가 흐려지지 않는다.
  */
 @keyframes result-enter {
   from {
@@ -315,7 +297,7 @@
   animation: result-enter-fade 600ms ease-out backwards;
 }
 
-/* 핑크 설명 박스: 위→아래로 살짝 깊어지는 그라데이션 + 좌상단 은은한 광택 + 윗면 하이라이트. 움직임은 없다. */
+/* 결과 설명 박스 배경 */
 .result-desc-box {
   background:
     radial-gradient(120% 160% at 0% 0%, rgb(255 255 255 / 0.16), transparent 55%),
@@ -325,7 +307,7 @@
     0 14px 30px -18px rgb(225 80 130 / 0.55);
 }
 
-/* KEY POINT 제목: 핑크 톤 안에서 천천히 흐르는 그라데이션 글자 */
+/* KEY POINT 제목 그라데이션 */
 @keyframes result-text-shimmer {
   to {
     background-position: -200% 0;
@@ -341,7 +323,7 @@
   animation: result-text-shimmer 4s linear infinite;
 }
 
-/* KEY POINT 양옆 반짝이 */
+/* KEY POINT 양옆 반짝임 */
 @keyframes result-twinkle {
   0%,
   100% {
@@ -370,7 +352,7 @@
   }
 }
 
-/* PIN 입력 오류 시 흔들리는 피드백 */
+/* PIN 오입력 피드백 */
 @keyframes pin-shake {
   0%,
   100% {
@@ -390,10 +372,7 @@
   animation: pin-shake 0.4s ease-in-out;
 }
 
-/*
- * 메인/설문 화면 공통 타이포 규칙.
- * Pretendard 한글은 기본 자간이 넓게 느껴져 살짝 조이고, 단어 중간에서 줄이 끊기지 않게 한다.
- */
+/* 메인/설문 화면 타이포그래피 */
 .event-screen {
   font-family: var(--font-event);
   letter-spacing: -0.01em;
@@ -401,10 +380,8 @@
 }
 
 /*
- * 중국어·일본어 화면. Pretendard 에는 한자·가나가 없어 시스템 글꼴로 넘어가므로 언어에 맞는 글꼴
- * (간체 한자 / 일본 한자 자형)을 이어 지정한다. S-Core Dream(결과 화면)은 가나·한자 일부만 들어 있어
- * 글자마다 글꼴이 섞여 보이므로 이 언어들에서는 시스템 글꼴을 먼저 쓴다.
- * 띄어쓰기가 없는 언어라 keep-all 이면 줄이 안 끊겨 넘치므로 글자 단위 줄바꿈으로 되돌린다.
+ * 중국어, 일본어: 기본 글꼴에 없는 한자/가나를 위해 언어별 시스템 글꼴을 지정한다.
+ * 띄어쓰기가 없어 keep-all 이면 줄이 넘치므로 글자 단위 줄바꿈으로 되돌린다.
  */
 html:lang(zh) {
   font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
@@ -423,7 +400,7 @@ html:is(:lang(zh), :lang(ja)) :is(.event-screen, .break-keep) {
   line-break: strict;
 }
 
-/* 문항이 바뀔 때 질문+선택지 묶음이 살짝 떠오르며 바뀐다 — 화면이 커서 "바뀌었다"는 신호가 필요하다. */
+/* 문항 전환 애니메이션 */
 @keyframes question-enter {
   from {
     opacity: 0;
@@ -439,9 +416,7 @@ html:is(:lang(zh), :lang(ja)) :is(.event-screen, .break-keep) {
   animation: question-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/*
- * 메인 CTA 배너: 행사장에서 멀리서도 "누를 수 있는 곳"으로 읽히도록 빛이 주기적으로 한 번 훑고 지나간다.
- */
+/* 메인 CTA 배너 광택 효과 */
 @keyframes cta-shine {
   0%,
   62% {
@@ -462,7 +437,7 @@ html:is(:lang(zh), :lang(ja)) :is(.event-screen, .break-keep) {
   pointer-events: none;
 }
 
-/* 메인 화면 "화면을 터치하세요" 안내: 천천히 깜빡이며 대기 상태임을 알린다. */
+/* 메인 화면 터치 안내 */
 @keyframes touch-hint {
   0%,
   100% {
@@ -477,7 +452,7 @@ html:is(:lang(zh), :lang(ja)) :is(.event-screen, .break-keep) {
   animation: touch-hint 2.4s ease-in-out infinite;
 }
 
-/* 키오스크는 스크롤이 생기면 안 된다 */
+/* 키오스크 화면 스크롤 방지 */
 html,
 body {
   height: 100%;
@@ -485,7 +460,7 @@ body {
   overscroll-behavior: none;
 }
 
-/* 터치 화면에서 글자를 길게 누르면 선택 영역·Windows 선택 핸들이 뜨므로 화면 전체에서 막는다. */
+/* 길게 누를 때 텍스트 선택 방지 */
 body {
   -webkit-user-select: none;
   user-select: none;
@@ -500,8 +475,8 @@ textarea {
 }
 
 /*
- * 터치 제스처(스크롤·확대)를 화면 전체에서 끈다 — 누르다 손가락이 조금 밀리면 브라우저가 스크롤로 판단해
- * 누름을 취소해 버린다. 스크롤이 필요한 곳(설정 창 목록)만 touch-pan-y 로 다시 켠다.
+ * 누르는 중 손가락이 밀려 스크롤로 판단되면 누름이 취소되므로 터치 제스처를 끈다.
+ * 스크롤이 필요한 영역(설정 창 목록)만 touch-pan-y 로 허용한다.
  */
 html,
 body,
