@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { formatLocalDate, formatLocalDateTime } from "@shared/date";
 import type { DailyCount, KioskStatistics, ParticipantInput, ParticipantRecord } from "@shared/types";
-import { formatLocalDate, formatLocalDateTime } from "./date";
 import { logError } from "./log";
 import { configDir, counterFile, dataDir, dayFile } from "./paths";
 
-/** 임시 파일에 쓰고 fsync 후 rename — 쓰는 도중 전원이 꺼져도 원본이 반쯤 쓰인 채로 남지 않는다. */
+/** 임시 파일에 쓰고 fsync 후 rename 해서 쓰기 도중 전원이 꺼져도 원본이 깨지지 않게 한다. */
 async function writeFileAtomic(filePath: string, content: string): Promise<void> {
   const tmp = `${filePath}.tmp`;
   const handle = await fs.open(tmp, "w");
@@ -18,7 +18,7 @@ async function writeFileAtomic(filePath: string, content: string): Promise<void>
   await fs.rename(tmp, filePath);
 }
 
-/** 한 줄씩 파싱하되, 비정상 종료로 끝에 반쪽만 쓰인 줄 등 깨진 줄은 건너뛴다. */
+/** JSONL 파싱. 비정상 종료로 잘린 줄 등 깨진 줄은 로그만 남기고 건너뛴다. */
 function parseLines(raw: string, file: string): ParticipantRecord[] {
   const records: ParticipantRecord[] = [];
   raw.split("\n").forEach((line, i) => {
@@ -46,7 +46,7 @@ async function listDayFiles(): Promise<string[]> {
   }
 }
 
-/** 카운터 파일이 없거나 깨졌을 때, 저장된 기록 중 가장 큰 번호에서 이어간다 — 번호가 1로 되돌아가 겹치지 않게. */
+/** 카운터 파일이 없거나 깨졌을 때 기존 기록의 최대 번호부터 이어서 발급하기 위해 사용한다. */
 async function maxRecordedNo(): Promise<number> {
   let max = 0;
   for (const file of await listDayFiles()) {
@@ -67,7 +67,7 @@ async function nextParticipantNo(): Promise<number> {
     if ((err as NodeJS.ErrnoException).code !== "ENOENT") void logError("counter read", err);
   }
 
-  // 카운터가 없거나 깨졌을 때만 기록 전체를 훑어 복구한다 (평소엔 매 저장마다 파일을 다 읽지 않게).
+  // 카운터를 읽지 못한 경우에만 전체 기록을 조회해 복구
   const recorded = lastNo === null ? await maxRecordedNo() : 0;
   const no = Math.max(lastNo ?? 0, recorded) + 1;
 
@@ -76,10 +76,10 @@ async function nextParticipantNo(): Promise<number> {
   return no;
 }
 
-// 저장 요청이 겹쳐 들어와도 번호 발급 → 기록을 한 건씩 차례로 처리해 번호가 겹치지 않게 한다.
+// 동시 저장 요청을 직렬화해 참여번호 중복을 막는다.
 let saveQueue: Promise<unknown> = Promise.resolve();
 
-/** 참여 완료 직후 즉시 append + fsync해서 비정상 종료에도 데이터가 남도록 한다. */
+/** 참여 기록을 일자별 파일에 즉시 append + fsync 한다. */
 export function appendParticipant(input: ParticipantInput): Promise<{ no: number }> {
   const task = saveQueue.then(() => appendParticipantNow(input));
   saveQueue = task.catch(() => undefined);
@@ -90,7 +90,7 @@ async function appendParticipantNow(input: ParticipantInput): Promise<{ no: numb
   try {
     await fs.mkdir(dataDir(), { recursive: true });
 
-    // 재시도로 다시 들어온 건은 처음 완료 시각(createdAt)을 그대로 쓴다.
+    // 재시도 건은 최초 완료 시각을 유지
     const createdAt = input.createdAt ?? formatLocalDateTime(new Date());
     const no = await nextParticipantNo();
     const record: ParticipantRecord = {

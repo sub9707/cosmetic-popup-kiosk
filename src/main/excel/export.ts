@@ -1,9 +1,12 @@
 import { dialog, type BrowserWindow } from "electron";
 import ExcelJS from "exceljs";
+import { formatLocalDate } from "@shared/date";
 import type { ExportExcelResult } from "@shared/types";
 import { getStatistics, readAllParticipants } from "../store/participants";
-import { formatLocalDate } from "../store/date";
 import { logError } from "../store/log";
+
+const QUESTION_COUNT = 5;
+const QUESTION_KEYS = Array.from({ length: QUESTION_COUNT }, (_, i) => `q${i + 1}`);
 
 export async function exportExcel(parent: BrowserWindow | null): Promise<ExportExcelResult> {
   const options = {
@@ -28,7 +31,7 @@ export async function exportExcel(parent: BrowserWindow | null): Promise<ExportE
   }
 }
 
-/** 현장에서 스태프가 바로 알아들을 수 있는 말로 바꾼다. */
+/** 파일 시스템 오류 코드를 운영자용 안내 문구로 변환 */
 function describeExportError(err: unknown): string {
   const code = (err as NodeJS.ErrnoException)?.code;
   if (code === "EBUSY" || code === "EPERM" || code === "EACCES") {
@@ -37,6 +40,10 @@ function describeExportError(err: unknown): string {
   if (code === "ENOSPC") return "저장 공간이 부족합니다.";
   if (code === "ENOENT") return "저장 위치를 찾을 수 없습니다. USB 연결 등을 확인하세요.";
   return err instanceof Error ? err.message : String(err);
+}
+
+function increment(counts: Map<string, number>, key: string): void {
+  counts.set(key, (counts.get(key) ?? 0) + 1);
 }
 
 async function writeWorkbook(filePath: string): Promise<void> {
@@ -49,37 +56,24 @@ async function writeWorkbook(filePath: string): Promise<void> {
     { header: "참여번호", key: "no", width: 10 },
     { header: "참여날짜", key: "date", width: 14 },
     { header: "참여시간", key: "time", width: 12 },
-    { header: "Q1", key: "q1", width: 6 },
-    { header: "Q2", key: "q2", width: 6 },
-    { header: "Q3", key: "q3", width: 6 },
-    { header: "Q4", key: "q4", width: 6 },
-    { header: "Q5", key: "q5", width: 6 },
+    ...QUESTION_KEYS.map((key) => ({ header: key.toUpperCase(), key, width: 6 })),
     { header: "추천제품", key: "result", width: 16 },
   ];
   for (const p of participants) {
     const [date, time] = p.createdAt.split("T");
-    participantsSheet.addRow({
-      no: p.no,
-      date,
-      time,
-      q1: p.answers[0] ?? "",
-      q2: p.answers[1] ?? "",
-      q3: p.answers[2] ?? "",
-      q4: p.answers[3] ?? "",
-      q5: p.answers[4] ?? "",
-      result: p.result,
-    });
+    const answers = Object.fromEntries(QUESTION_KEYS.map((key, i) => [key, p.answers[i] ?? ""]));
+    participantsSheet.addRow({ no: p.no, date, time, ...answers, result: p.result });
   }
   participantsSheet.getRow(1).font = { bold: true };
 
   const products = [...new Set(participants.map((p) => p.result))].sort();
-
-  const byDateProducts = new Map<string, Map<string, number>>();
+  const totalCounts = new Map<string, number>();
+  const dailyCounts = new Map<string, Map<string, number>>();
   for (const p of participants) {
     const date = p.createdAt.split("T")[0];
-    if (!byDateProducts.has(date)) byDateProducts.set(date, new Map());
-    const counts = byDateProducts.get(date)!;
-    counts.set(p.result, (counts.get(p.result) ?? 0) + 1);
+    if (!dailyCounts.has(date)) dailyCounts.set(date, new Map());
+    increment(dailyCounts.get(date)!, p.result);
+    increment(totalCounts, p.result);
   }
 
   const dailySheet = workbook.addWorksheet("일자별 통계");
@@ -89,17 +83,12 @@ async function writeWorkbook(filePath: string): Promise<void> {
     ...products.map((name) => ({ header: name, key: name, width: 16 })),
   ];
   for (const d of statistics.byDate) {
-    const counts = byDateProducts.get(d.date) ?? new Map<string, number>();
+    const counts = dailyCounts.get(d.date);
     const row: Record<string, string | number> = { date: d.date, count: d.count };
-    for (const name of products) row[name] = counts.get(name) ?? 0;
+    for (const name of products) row[name] = counts?.get(name) ?? 0;
     dailySheet.addRow(row);
   }
   dailySheet.getRow(1).font = { bold: true };
-
-  const totalProductCounts = new Map<string, number>();
-  for (const p of participants) {
-    totalProductCounts.set(p.result, (totalProductCounts.get(p.result) ?? 0) + 1);
-  }
 
   const totalSheet = workbook.addWorksheet("전체 통계");
   totalSheet.columns = [
@@ -108,7 +97,7 @@ async function writeWorkbook(filePath: string): Promise<void> {
   ];
   totalSheet.addRow({ label: "전체 참여자 수", value: participants.length });
   for (const name of products) {
-    totalSheet.addRow({ label: `${name} 추천 수`, value: totalProductCounts.get(name) ?? 0 });
+    totalSheet.addRow({ label: `${name} 추천 수`, value: totalCounts.get(name) ?? 0 });
   }
   totalSheet.getRow(1).font = { bold: true };
 
