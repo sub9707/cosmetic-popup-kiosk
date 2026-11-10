@@ -5,13 +5,17 @@ import { cn } from "@/lib/utils";
 
 const PIN_CODE = "202609";
 const DIGIT_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+const SHAKE_DURATION_MS = 500;
+
+const DIGIT_BUTTON_CLASS =
+  "flex size-16 items-center justify-center rounded-full bg-event-primary-soft text-2xl font-semibold text-event-primary transition-colors active:scale-95 active:bg-event-primary/30";
 
 interface PinLockModalProps {
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-/** 설정 모달을 열기 전 매번 요구하는 숫자 비밀번호 게이트. 실제 보안 목적이 아니라 단순 접근 확인용. */
+/** 설정 진입 전 PIN 확인. 보안 목적이 아니라 관람객의 오조작을 막기 위한 용도다. */
 export function PinLockModal({ onSuccess, onCancel }: PinLockModalProps) {
   const text = useUiText();
   const [entered, setEntered] = useState("");
@@ -31,7 +35,7 @@ export function PinLockModal({ onSuccess, onCancel }: PinLockModalProps) {
         setTimeout(() => {
           setEntered("");
           setShake(false);
-        }, 500);
+        }, SHAKE_DURATION_MS);
       }
     }
   }
@@ -62,21 +66,12 @@ export function PinLockModal({ onSuccess, onCancel }: PinLockModalProps) {
 
         <div className="grid grid-cols-3 gap-3">
           {DIGIT_KEYS.map((digit) => (
-            <button
-              key={digit}
-              type="button"
-              onClick={() => handleDigit(digit)}
-              className="flex size-16 items-center justify-center rounded-full bg-event-primary-soft text-2xl font-semibold text-event-primary transition-colors active:scale-95 active:bg-event-primary/30"
-            >
+            <button key={digit} type="button" onClick={() => handleDigit(digit)} className={DIGIT_BUTTON_CLASS}>
               {digit}
             </button>
           ))}
           <div />
-          <button
-            type="button"
-            onClick={() => handleDigit("0")}
-            className="flex size-16 items-center justify-center rounded-full bg-event-primary-soft text-2xl font-semibold text-event-primary transition-colors active:scale-95 active:bg-event-primary/30"
-          >
+          <button type="button" onClick={() => handleDigit("0")} className={DIGIT_BUTTON_CLASS}>
             0
           </button>
           <button
