@@ -4,6 +4,9 @@ import { logError, logInfo } from "./store/log";
 
 const isDev = !app.isPackaged;
 
+const RELOAD_WINDOW_MS = 60_000;
+const MAX_RELOADS_PER_WINDOW = 3;
+
 let mainWindow: BrowserWindow | null = null;
 let titleBarVisible = false;
 
@@ -30,16 +33,15 @@ export function createWindow(): void {
     },
   });
 
-  // 렌더러가 죽으면 흰 화면으로 멈추므로, 기록을 남기고 바로 다시 불러온다.
-  // 시작하자마자 계속 죽는 경우 무한 재시작에 빠지지 않게 1분에 3번까지만 시도한다.
+  // 렌더러가 죽으면 다시 불러온다. 크래시 루프를 막기 위해 1분에 3회까지만 시도
   const recentReloads: number[] = [];
   win.webContents.on("render-process-gone", (_event, details) => {
     void logError("render-process-gone", `${details.reason} (exitCode ${details.exitCode})`);
     if (details.reason === "clean-exit" || win.isDestroyed()) return;
 
     const now = Date.now();
-    while (recentReloads.length && now - recentReloads[0] > 60_000) recentReloads.shift();
-    if (recentReloads.length >= 3) return;
+    while (recentReloads.length && now - recentReloads[0] > RELOAD_WINDOW_MS) recentReloads.shift();
+    if (recentReloads.length >= MAX_RELOADS_PER_WINDOW) return;
     recentReloads.push(now);
     win.webContents.reload();
   });
@@ -49,11 +51,10 @@ export function createWindow(): void {
   win.webContents.on("responsive", () => {
     void logInfo("renderer responsive", "window became responsive again");
   });
-  // 화면 쪽(렌더러)에서 난 오류는 메인 프로세스 로그에 안 잡히므로, 콘솔 오류를 그대로 옮겨 적는다.
+  // 렌더러 콘솔 에러를 메인 로그 파일에 함께 기록
   win.webContents.on("console-message", (_event, level, message, line, sourceId) => {
     if (level >= 3) void logError("renderer console", `${message} (${sourceId}:${line})`);
   });
-  // 시작할 때 한 번, 그리고 화면을 다시 불러올 때마다(자동 새로고침·렌더러 재시작) 남는다.
   win.webContents.on("did-finish-load", () => {
     void logInfo("renderer loaded", win.webContents.getURL());
   });
@@ -78,7 +79,6 @@ export function createWindow(): void {
   mainWindow = win;
 }
 
-/** 두 번째 실행 시도가 들어오면 새 창 대신 기존 창을 앞으로 가져온다. */
 export function focusMainWindow(): void {
   const win = mainWindow;
   if (!win || win.isDestroyed()) return;
@@ -90,7 +90,7 @@ export function getTitleBarVisible(): boolean {
   return titleBarVisible;
 }
 
-/** frame은 BrowserWindow 생성 시점에만 정할 수 있어, 토글 시 창을 새로 만들고 이전 창을 닫는다. */
+/** frame 옵션은 생성 시에만 지정할 수 있어 창을 새로 만들고 기존 창을 닫는다. */
 export function setTitleBarVisible(visible: boolean): void {
   if (visible === titleBarVisible) return;
   titleBarVisible = visible;
