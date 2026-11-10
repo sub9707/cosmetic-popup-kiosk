@@ -1,6 +1,6 @@
 import { ChoiceOption } from "@/components/choice-option";
-import { CHOICE_EMPHASIS, CHOICE_LABELS, type ChoiceLabel } from "@/lib/constants";
-import type { EventSurveyQuestion } from "@shared/types";
+import { CHOICE_EMPHASIS } from "@/lib/constants";
+import { CHOICE_LABELS, type ChoiceLabel, type EventSurveyQuestion } from "@shared/types";
 
 interface SurveyChoiceListProps {
   question: EventSurveyQuestion;

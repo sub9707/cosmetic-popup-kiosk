@@ -1,24 +1,13 @@
 import { ChevronRight, RotateCcw, Sparkle } from "lucide-react";
-import {
-  Fragment,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  type CSSProperties,
-} from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from "react";
 import { FloatingBubbles } from "@/components/floating-bubbles";
-import { RESULT_AUTO_RESET_ENABLED, RESULT_AUTO_RESET_SECONDS } from "@/lib/constants";
-import {
-  fireRealisticConfetti,
-  fireSnowConfetti,
-  getConfetti,
-} from "@/lib/confetti-effects";
+import { fireRealisticConfetti, fireSnowConfetti, getConfetti } from "@/lib/confetti-effects";
+import { EVENT_LOGO, EVENT_NAME, RESULT_AUTO_RESET_SECONDS } from "@/lib/constants";
 import { useLang, useUiText } from "@/lib/i18n";
+import { saveParticipant } from "@/lib/participant-save";
 import { pressHandlers } from "@/lib/press";
 import { recommendChoice } from "@/lib/recommend";
 import { PRODUCT_ASSETS, PRODUCT_NAMES, RESULT_COPY, RESULT_ROUTINES } from "@/lib/results";
-import { saveParticipant } from "@/lib/participant-save";
 import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 import type { ChoiceLabel } from "@shared/types";
@@ -28,13 +17,9 @@ interface ResultScreenProps {
   onReset: () => void;
 }
 
-// snow는 오래 지속되도록 realistic보다 훨씬 길게 잡는다.
 const SNOW_DURATION_MS = 10000;
 
-/**
- * 결과 요소 등장 순서(ms). 흰 화면이 걷히는 동안(~700ms) 위에서부터 차례로 올라온다.
- * 한 번에 다 보이지 않게 하되, 전체가 2초 안에 끝나 기다리는 느낌은 없게 한다.
- */
+/** 요소별 등장 지연(ms). 흰 화면이 걷히는 동안 위에서부터 차례로 나타난다. */
 const ENTER_DELAY = {
   logo: 150,
   card: 350,
@@ -52,18 +37,14 @@ const enterDelay = (ms: number): CSSProperties => ({ animationDelay: `${ms}ms` }
 const DESC_FONT_MAX = 20;
 const DESC_FONT_MIN = 15;
 
-/**
- * 설명 박스 문구는 데이터의 줄 구성(보통 3줄) 그대로 보여야 한다 — 줄마다 nowrap 으로 두고,
- * 가장 긴 줄이 박스 폭을 넘으면 넘지 않을 때까지 글자 크기를 0.5px 씩 줄인다.
- */
-function useFitDescFont(deps: unknown) {
+/** 설명 문구는 줄 구성을 유지해야 하므로 nowrap 으로 두고, 박스 폭을 넘으면 글자 크기를 0.5px 씩 줄인다. */
+function useFitDescFont(content: unknown) {
   const boxRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const box = boxRef.current;
     if (!box) return;
-    const overflows = () =>
-      Array.from(box.children).some((line) => line.scrollWidth > line.clientWidth);
+    const overflows = () => Array.from(box.children).some((line) => line.scrollWidth > line.clientWidth);
 
     function fit() {
       if (!box) return;
@@ -76,8 +57,7 @@ function useFitDescFont(deps: unknown) {
     }
 
     fit();
-    // 결과 화면 폰트(S-Core Dream 굵기별 파일)는 처음 쓰일 때 내려받는다. 대체 폰트로 잰 크기로는
-    // 실제 폰트에서 줄이 넘쳐 잘릴 수 있으니, 폰트가 다 들어오면 한 번 더 맞춘다.
+    // 웹폰트 로드 전에는 대체 폰트 기준으로 측정되므로 로드가 끝나면 다시 맞춘다.
     let cancelled = false;
     void document.fonts.ready.then(() => {
       if (!cancelled) fit();
@@ -85,12 +65,11 @@ function useFitDescFont(deps: unknown) {
     return () => {
       cancelled = true;
     };
-  }, [deps]);
+  }, [content]);
 
   return boxRef;
 }
 
-/** 설문 완료 후 보여주는 추천 루틴 결과 화면. */
 export function ResultScreen({ answers, onReset }: ResultScreenProps) {
   const choice = useMemo(() => recommendChoice(answers), [answers]);
   const { lang } = useLang();
@@ -100,7 +79,6 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
   const savedOnce = useRef(false);
   const descBoxRef = useFitDescFont(copy);
 
-  // 결과 등장 시 confetti + 눈발 연출.
   useEffect(() => {
     const instance = getConfetti();
     if (!instance) return;
@@ -117,7 +95,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
   }, []);
 
   useEffect(() => {
-    if (!RESULT_AUTO_RESET_ENABLED) return;
+    if (RESULT_AUTO_RESET_SECONDS === null) return;
     const timer = setTimeout(onReset, RESULT_AUTO_RESET_SECONDS * 1000);
     return () => clearTimeout(timer);
   }, [onReset]);
@@ -125,7 +103,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
   useEffect(() => {
     if (savedOnce.current) return;
     savedOnce.current = true;
-    // 화면 언어와 상관없이 한국어 헤드라인으로 저장해 엑셀 집계가 언어별로 갈리지 않게 한다.
+    // 언어별로 집계가 나뉘지 않도록 화면 언어와 관계없이 한국어 헤드라인으로 저장
     void saveParticipant({ answers, result: RESULT_COPY.ko[choice].headline });
   }, [answers, choice]);
 
@@ -136,18 +114,12 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
     >
       <FloatingBubbles />
 
-      {/* 상단 풍선 로고 + 좌우 하트 */}
       <div
         className="result-enter-drop relative z-10 flex w-full shrink-0 items-center justify-center"
         style={enterDelay(ENTER_DELAY.logo)}
       >
         <div className="result-logo-float relative w-[616px]">
-          <img
-            src="MFC-logo.png"
-            alt="My First Collagen"
-            className="block w-full"
-            draggable={false}
-          />
+          <img src={EVENT_LOGO.src} alt={EVENT_NAME} className="block w-full" draggable={false} />
         </div>
         <img
           src="assets/heart.png"
@@ -165,12 +137,8 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
         />
       </div>
 
-      {/* 결과 카드 (+ 흰 박스 뒤에 깔리는 별 장식) */}
-      <div
-        className="result-enter relative z-10 mt-8 w-[738px] shrink-0"
-        style={enterDelay(ENTER_DELAY.card)}
-      >
-        {/* 별 에셋들 — 흰 박스보다 아래 z-index라 박스 뒤로 비쳐 보인다. */}
+      <div className="result-enter relative z-10 mt-8 w-[738px] shrink-0" style={enterDelay(ENTER_DELAY.card)}>
+        {/* 카드 뒤에 깔리는 별 장식 */}
         <img
           src="assets/star-top-right.png"
           alt=""
@@ -194,7 +162,6 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
         />
 
         <div className="relative z-10 rounded-[40px] bg-white/40 px-12 pt-14 pb-12 shadow-[0_24px_60px_-30px_rgba(220,120,150,0.4)] ring-1 ring-white/50">
-          {/* 카드 좌상단 모서리에 걸치는 스마일 스티커 (박스 위) */}
           <img
             src="assets/smile.png"
             alt=""
@@ -203,7 +170,6 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
             className="absolute -top-7 -left-5 z-20 size-[58px]"
           />
 
-          {/* 소제목 + 하이라이트 헤드라인 */}
           <div className="flex flex-col items-center gap-2 text-center">
             <p
               className="result-enter text-[24px] font-medium text-foreground"
@@ -215,13 +181,10 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
               className="result-enter text-[34px] leading-tight font-black text-balance text-foreground"
               style={enterDelay(ENTER_DELAY.headline)}
             >
-              <span className="box-decoration-clone bg-black/[0.07] px-2 py-1">
-                {copy.headline}
-              </span>
+              <span className="box-decoration-clone bg-black/[0.07] px-2 py-1">{copy.headline}</span>
             </h2>
           </div>
 
-          {/* 3단계 제품 (사이 > 화살표) */}
           <div className="relative mt-9 flex items-start justify-center gap-1">
             <img
               src="assets/glowy-girl.png"
@@ -250,8 +213,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
                     className="result-enter-pop flex w-[180px] flex-col items-center gap-3"
                     style={enterDelay(productDelay)}
                   >
-                    {/* 제품명은 한 줄 — 칸보다 조금 길면 양옆 여백으로 넘친다.
-                        외국어 제품명은 한국어보다 길어서 한 단계 작게 쓴다. */}
+                    {/* 제품명은 한 줄로 표시. 외국어 제품명은 길어서 한 단계 작게 쓴다. */}
                     <p
                       className={cn(
                         "h-7 text-center leading-7 font-bold whitespace-nowrap text-event-primary",
@@ -275,7 +237,6 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
             })}
           </div>
 
-          {/* 핑크 설명 박스 */}
           <div
             ref={descBoxRef}
             className="result-desc-box result-enter mt-8 rounded-[26px] px-6 py-6 text-center leading-relaxed text-white"
@@ -284,10 +245,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
             {copy.description.map((line, li) => (
               <p key={li} className="overflow-hidden whitespace-nowrap">
                 {line.map((run, ri) => (
-                  <span
-                    key={ri}
-                    className={run.bold ? "font-bold" : "font-normal"}
-                  >
+                  <span key={ri} className={run.bold ? "font-bold" : "font-normal"}>
                     {run.text}
                   </span>
                 ))}
@@ -295,19 +253,10 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
             ))}
           </div>
 
-          {/* KEY POINT */}
-          <div
-            className="result-enter mt-7 flex flex-col items-center gap-2"
-            style={enterDelay(ENTER_DELAY.keyPoint)}
-          >
+          <div className="result-enter mt-7 flex flex-col items-center gap-2" style={enterDelay(ENTER_DELAY.keyPoint)}>
             <div className="flex items-center gap-2.5">
-              <Sparkle
-                aria-hidden="true"
-                className="result-twinkle size-5 fill-[#f6a0bd] text-[#f6a0bd]"
-              />
-              <p className="result-keypoint-title text-[26px] font-black tracking-wide">
-                KEY POINT
-              </p>
+              <Sparkle aria-hidden="true" className="result-twinkle size-5 fill-[#f6a0bd] text-[#f6a0bd]" />
+              <p className="result-keypoint-title text-[26px] font-black tracking-wide">KEY POINT</p>
               <Sparkle
                 aria-hidden="true"
                 className="result-twinkle size-5 fill-[#f6a0bd] text-[#f6a0bd]"
@@ -326,7 +275,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
         </div>
       </div>
 
-      {/* 하단 브랜드 워드마크 — 로고 이미지를 핑크로 마스크 컬러링 */}
+      {/* 브랜드 로고 이미지를 마스크로 사용해 핑크색으로 표시 */}
       <div
         aria-hidden="true"
         className="result-enter-fade relative z-10 mt-9 h-[72px] w-[236px] shrink-0"
@@ -344,8 +293,7 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
         }}
       />
 
-      {/* 처음으로 — 눈에 띄지 않게 로고 아래 고스트 버튼.
-          보이는 크기는 작게 두되, before 로 터치 영역만 사방 20px 넓혀 대충 눌러도 먹게 한다. */}
+      {/* 보이는 크기는 작게 두고 ::before 로 터치 영역을 사방 20px 넓힌다. */}
       <button
         type="button"
         {...pressHandlers(() => {
@@ -359,11 +307,8 @@ export function ResultScreen({ answers, onReset }: ResultScreenProps) {
         {text.startOver}
       </button>
 
-      {/* confetti 캔버스는 App 이 항상 띄워 둔다(z-40) — 이 흰 막(z-50)보다는 아래, 결과 내용보다는 위. */}
-      <div
-        className="result-whiteout pointer-events-none absolute inset-0 z-50 bg-white"
-        aria-hidden="true"
-      />
+      {/* 진입 시 흰 화면 전환. App 의 confetti 캔버스(z-40)보다 위에 둔다. */}
+      <div className="result-whiteout pointer-events-none absolute inset-0 z-50 bg-white" aria-hidden="true" />
     </div>
   );
 }

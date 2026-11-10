@@ -12,15 +12,14 @@ import type { ChoiceLabel } from "@shared/types";
 
 type Screen = "main" | "quiz" | "loading" | "result";
 
-/**
- * 참여가 이만큼 끝날 때마다, 메인 화면에서 잠깐 아무도 안 만질 때 화면을 새로 불러온다.
- * 종일 켜 두는 동안 혹시 쌓였을 메모리를 털어내는 안전망 — 미저장 기록·음량 설정은 localStorage 에 있어 유지된다.
+/*
+ * 참여가 일정 건수 쌓이면 메인 화면 유휴 시점에 새로고침해 장시간 운영 중 누적된 메모리를 정리한다.
+ * 미저장 기록과 음량 설정은 localStorage 에 있어 유지된다.
  */
 const RELOAD_AFTER_SESSIONS = 50;
 const RELOAD_IDLE_MS = 5000;
 let sessionsSinceLoad = 0;
 
-/** 메인 → 설문 → 로딩 → 결과 → N초 후 메인 상태 머신. */
 export function App() {
   const [screen, setScreen] = useState<Screen>("main");
   const [answers, setAnswers] = useState<ChoiceLabel[]>([]);
@@ -31,13 +30,13 @@ export function App() {
     document.documentElement.lang = HTML_LANG[lang];
   }, [lang]);
 
-  // 메인으로 돌아오면 다음 관람객을 위해 한국어로 되돌린다.
+  // 메인 복귀 시 언어를 한국어로 초기화
   const goMain = useCallback(() => {
     setScreen("main");
     setLang("ko");
   }, []);
 
-  // 지난 실행에서 저장에 실패해 기기에 보관해 둔 참여 기록이 있으면 다시 저장한다.
+  // 이전 실행에서 저장하지 못한 참여 기록 재저장
   useEffect(() => {
     void flushPendingParticipants();
   }, []);
@@ -45,7 +44,7 @@ export function App() {
   useEffect(() => {
     if (screen !== "main" || sessionsSinceLoad < RELOAD_AFTER_SESSIONS) return;
     const timer = setTimeout(() => window.location.reload(), RELOAD_IDLE_MS);
-    // 그 사이 누가 화면을 만지면 이번엔 건너뛰고, 다음에 메인으로 돌아올 때 다시 시도한다.
+    // 대기 중 터치가 있으면 취소하고 다음 메인 복귀 때 다시 시도
     const cancel = () => clearTimeout(timer);
     window.addEventListener("pointerdown", cancel);
     return () => {
@@ -79,10 +78,7 @@ export function App() {
     );
   } else if (screen === "result") {
     content = (
-      <ResultScreen
-        answers={answers}
-        onReset={goMain}
-      />
+      <ResultScreen answers={answers} onReset={goMain} />
     );
   } else {
     content = (
@@ -98,7 +94,7 @@ export function App() {
   return (
     <LangProvider value={langValue}>
       {content}
-      {/* 결과 화면 confetti 용 캔버스. 화면이 바뀌어도 없애지 않고 하나를 계속 쓴다 (confetti-effects 참고). */}
+      {/* confetti 캔버스는 화면 전환과 관계없이 하나를 재사용한다 (confetti-effects.ts 참고) */}
       <canvas ref={setConfettiCanvas} className="pointer-events-none absolute inset-0 z-40 h-full w-full" />
     </LangProvider>
   );
