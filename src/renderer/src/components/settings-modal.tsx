@@ -10,12 +10,18 @@ interface SettingsModalProps {
 
 export function SettingsModal({ onClose }: SettingsModalProps) {
   const [stats, setStats] = useState<KioskStatistics | null>(null);
-  const [exporting, setExporting] = useState(false);
-  const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [titleBarVisible, setTitleBarVisibleState] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const sound = useSoundSettings();
   const pendingCount = usePendingParticipantCount();
-  const [retrying, setRetrying] = useState(false);
+  const volumePercent = Math.round(sound.volume * 100);
+
+  useEffect(() => {
+    window.kiosk.getStatistics().then(setStats);
+    window.kiosk.getTitleBarVisible().then(setTitleBarVisibleState);
+  }, []);
 
   async function handleRetryPending() {
     setRetrying(true);
@@ -26,12 +32,6 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
       setRetrying(false);
     }
   }
-  const volumePercent = Math.round(sound.volume * 100);
-
-  useEffect(() => {
-    window.kiosk.getStatistics().then(setStats);
-    window.kiosk.getTitleBarVisible().then(setTitleBarVisibleState);
-  }, []);
 
   function handleToggleTitleBar(checked: boolean) {
     setTitleBarVisibleState(checked);
@@ -40,23 +40,21 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
   async function handleOpenDataFolder() {
     const error = await window.kiosk.openDataFolder();
-    setExportMessage(error ? `폴더 열기 실패 — ${error}` : null);
+    setMessage(error ? `폴더 열기 실패: ${error}` : null);
   }
 
   async function handleExport() {
     setExporting(true);
-    setExportMessage(null);
+    setMessage(null);
     try {
       const result = await window.kiosk.exportExcel();
-      if (result.canceled) {
-        setExportMessage(null);
-      } else if (result.ok) {
-        setExportMessage("다운로드 완료");
-      } else {
-        setExportMessage(`다운로드 실패${result.error ? ` — ${result.error}` : ""}`);
+      if (result.ok) {
+        setMessage("다운로드 완료");
+      } else if (!result.canceled) {
+        setMessage(result.error ? `다운로드 실패: ${result.error}` : "다운로드 실패");
       }
     } catch (err) {
-      setExportMessage(`다운로드 실패 — ${err instanceof Error ? err.message : String(err)}`);
+      setMessage(`다운로드 실패: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setExporting(false);
     }
@@ -81,9 +79,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
         {pendingCount > 0 && (
           <section className="flex items-center justify-between gap-3 rounded-xl border-2 border-amber-400 bg-amber-50 px-4 py-3">
-            <p className="text-base font-medium text-amber-900">
-              저장 대기 중인 참여 기록 {pendingCount}건
-            </p>
+            <p className="text-base font-medium text-amber-900">저장 대기 중인 참여 기록 {pendingCount}건</p>
             <button
               type="button"
               onClick={handleRetryPending}
@@ -121,7 +117,6 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           />
         </label>
 
-        {/* 효과음: 음소거 + 볼륨. 슬라이더를 놓으면 확인용으로 버튼음을 한 번 들려준다. */}
         <section className="flex flex-col gap-3 rounded-xl bg-event-primary-soft px-4 py-3.5">
           <label className="flex items-center justify-between gap-3">
             <span className="flex items-center gap-2 text-base font-medium text-foreground">
@@ -145,6 +140,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
               <span className="font-medium text-foreground">효과음 볼륨</span>
               <span className="font-semibold text-event-primary tabular-nums">{volumePercent}%</span>
             </div>
+            {/* 슬라이더를 놓으면 확인용 효과음 재생 */}
             <input
               type="range"
               min={0}
@@ -177,7 +173,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
             <FolderOpen className="size-5" />
             데이터 폴더 열기
           </button>
-          {exportMessage && <p className="text-center text-sm break-all text-muted-foreground">{exportMessage}</p>}
+          {message && <p className="text-center text-sm break-all text-muted-foreground">{message}</p>}
           <button
             type="button"
             onClick={onClose}
